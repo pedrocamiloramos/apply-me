@@ -205,3 +205,24 @@ def test_gitignore_protege_dados_e_segredos():
     texto = (RAIZ / ".gitignore").read_text(encoding="utf-8")
     for padrao in ("carreira-dados/", "*.pdf", "*.docx", ".env", "*.pem", "/log.csv", "/funil.md", "/candidaturas/"):
         assert padrao in texto, padrao
+
+
+# --- CSV: valores vindos de vagas não podem virar fórmulas no Excel/Sheets ---
+@pytest.mark.parametrize("perigoso", ['=HYPERLINK("http://x.invalid","a")', "+cmd|' /C calc'!A0", "-2+3", "@SUM(1+1)", "\t=1+1", "\r=1+1"])
+def test_registrar_neutraliza_formulas_em_celulas(tmp_path, perigoso):
+    log = tmp_path / "log.csv"
+    registrar(log, {"url": "https://a.example/v/1", "empresa": perigoso, "resposta": perigoso})
+    with log.open(encoding="utf-8", newline="") as f:
+        linha = next(csv.DictReader(f))
+    assert linha["empresa"] == "'" + perigoso and linha["resposta"] == "'" + perigoso
+    registrar(log, {"url": "https://a.example/v/1", "empresa": linha["empresa"]})  # idempotente: não duplica a aspa
+    with log.open(encoding="utf-8", newline="") as f:
+        assert next(csv.DictReader(f))["empresa"] == "'" + perigoso
+
+
+def test_registrar_nao_altera_valores_normais(tmp_path):
+    log = tmp_path / "log.csv"
+    registrar(log, {"url": "https://a.example/v/1", "empresa": "Empresa Exemplo", "data": "2026-10-12", "status": "enviada"})
+    with log.open(encoding="utf-8", newline="") as f:
+        linha = next(csv.DictReader(f))
+    assert (linha["empresa"], linha["data"], linha["url"]) == ("Empresa Exemplo", "2026-10-12", "https://a.example/v/1")

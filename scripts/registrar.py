@@ -68,6 +68,14 @@ def _escrever(log: Path, linhas: list[dict[str, str]], colunas: list[str]) -> No
         raise
 
 
+_GATILHOS_DE_FORMULA = ("=", "+", "-", "@", "\t", "\r")
+
+
+def _neutralizar(valor: str) -> str:
+    """Prefixa uma aspa em células que o Excel/Sheets leria como fórmula (valores vêm de anúncios, não confiáveis)."""
+    return "'" + valor if valor.startswith(_GATILHOS_DE_FORMULA) else valor
+
+
 def registrar(log: Path, linha: dict[str, str]) -> Literal["criada", "atualizada"]:
     desconhecidos = sorted(set(linha) - set(CAMPOS))
     if desconhecidos:
@@ -79,6 +87,7 @@ def registrar(log: Path, linha: dict[str, str]) -> Literal["criada", "atualizada
         if linha["status"] and linha["status"] not in STATUS:
             raise ValueError(f"status inválido '{linha['status']}'; use um de: {', '.join(STATUS)}")
     chave = normalizar_url(linha["url"])
+    linha = {k: _neutralizar(v) for k, v in linha.items()}
     colunas, linhas = _ler_completo(log)
     for existente in linhas:
         if normalizar_url(existente["url"]) == chave:
