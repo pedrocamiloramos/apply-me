@@ -26,7 +26,7 @@ from scripts.resultado import Achado, Estado, Resultado, codigo_saida
 BLOQUEANTES = {"FATO_DESCONHECIDO", "CONFLITO_ABERTO"}
 _FORMULAICA = ">> "
 _IDS = re.compile(r"\s*\[f:([^\]]*)\]\s*$")
-_EMAIL = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
+_EMAIL = re.compile(r"(?<![\w.+-])[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
 _TELEFONE = re.compile(r"(?<!\w)\+?\d[\d\s().-]{7,}\d(?!\w)")
 
 _NUMEROS = {

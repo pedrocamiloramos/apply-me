@@ -88,7 +88,8 @@ def _data(valor: Any, onde: str) -> date | None:
 def _experiencia(d: dict[str, Any]) -> Experiencia:
     onde = f"experiencia {d['id']}"
     inicio = _data(d["inicio"], onde)
-    assert inicio is not None
+    if inicio is None:
+        raise ValueError(f"{onde}: 'inicio' é obrigatório")
     return Experiencia(
         id=d["id"],
         empregador=d["empregador"],

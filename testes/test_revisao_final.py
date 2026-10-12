@@ -137,3 +137,71 @@ def test_telefones_brasileiros_e_compactos(linha):
 
 def test_hook_pre_commit_inclui_renomeados():
     assert "ACMR" in (RAIZ / "scripts" / "hooks" / "pre-commit").read_text(encoding="utf-8")
+
+
+# --- Auditoria de segurança (v0.1) ---
+import time  # noqa: E402
+
+from scripts import conferir_fatos as _cf  # noqa: E402
+from scripts import verificar_privacidade as _vp  # noqa: E402
+
+
+@pytest.mark.parametrize("linha", ["1" * 30_000, "a." * 15_000, "9-" * 15_000, "a" * 30_000 + "@"],
+                         ids=["digitos", "pontos", "hifens", "arroba-final"])
+def test_linhas_enormes_nao_travam_o_guarda_nem_o_verificador(linha):
+    inicio = time.monotonic()
+    _vp.verificar_texto(linha, "x")
+    list(_cf._EMAIL.finditer(linha))
+    assert time.monotonic() - inicio < 2.0  # era quadrático (cerca de 40 s)
+
+
+def test_muitos_numeros_na_mesma_linha_nao_travam_o_guarda():
+    inicio = time.monotonic()
+    r = _vp.verificar_texto(" ".join(["900000000"] * 40_000), "x")  # todos fictícios
+    assert r.estado is Estado.PASSOU
+    assert time.monotonic() - inicio < 2.0
+
+
+def test_email_continua_a_ser_detetado_no_meio_de_texto():
+    assert _vp.verificar_texto("contacto: alguem@example.org.", "x").estado is Estado.REPROVOU  # privacidade:ignorar
+    assert _cf._EMAIL.findall("escreva para a.b+c@x.pt, depois") == ["a.b+c@x.pt"]  # privacidade:ignorar
+
+
+def test_inicio_nulo_no_mestre_da_mensagem_e_nao_traceback(tmp_path, capsys):
+    (tmp_path / "cv-mestre.md").write_text(
+        "---\nversao: '1'\nexperiencias:\n  - {id: a, empregador: E, titulos: {pt: [X]}, inicio: null, fim: null}\n---\n", encoding="utf-8")
+    (tmp_path / "conquistas.md").write_text("---\nfatos: []\n---\n", encoding="utf-8")
+    assert mestre_main([str(tmp_path)]) == 1
+    err = capsys.readouterr().err
+    assert "Traceback" not in err and "inicio" in err
+
+
+def test_ficheiro_de_texto_enorme_e_recusado_sem_ler_tudo(tmp_path, monkeypatch):
+    monkeypatch.setattr(_vp, "TAMANHO_MAXIMO", 1000)
+    (tmp_path / "grande.txt").write_text("a\n" * 2000, encoding="utf-8")
+    r = _vp.verificar_arvore(tmp_path)
+    assert r.estado is Estado.REPROVOU and r.achados[0].codigo == "FICHEIRO_GRANDE"
+
+
+def test_binario_grande_continua_a_ser_ignorado(tmp_path, monkeypatch):
+    monkeypatch.setattr(_vp, "TAMANHO_MAXIMO", 1000)
+    (tmp_path / "x.bin").write_bytes(b"\x00" * 5000)
+    assert _vp.verificar_arvore(tmp_path).estado is Estado.PASSOU
+
+
+# --- Higiene do repositório público ---
+def _rastreados() -> list[str]:
+    saida = subprocess.run(["git", "ls-files"], cwd=RAIZ, capture_output=True, text=True, check=True).stdout
+    return saida.splitlines()
+
+
+def test_repositorio_publico_nao_rastreia_dados_privados():
+    proibidos = [f for f in _rastreados() if f.startswith("carreira-dados/") or f.endswith((".pdf", ".docx", ".pem", ".key", ".env"))
+                 or Path(f).name in {".env", "id_rsa", "credentials.json"}]
+    assert proibidos == []
+
+
+def test_gitignore_protege_dados_e_segredos():
+    texto = (RAIZ / ".gitignore").read_text(encoding="utf-8")
+    for padrao in ("carreira-dados/", "*.pdf", "*.docx", ".env", "*.pem", "/log.csv", "/funil.md", "/candidaturas/"):
+        assert padrao in texto, padrao

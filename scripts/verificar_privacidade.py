@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import re
 import sys
+from bisect import bisect_right
 from pathlib import Path
 
 from scripts.resultado import Achado, Estado, Resultado, codigo_saida
@@ -16,6 +17,7 @@ MARCADOR_IGNORAR = "privacidade:ignorar"
 DOMINIO_FICTICIO = "exemplo.invalid"
 TELEFONE_FICTICIO = "900000000"
 PASTAS_IGNORADAS = {".git", ".superpowers", ".pytest_cache", "__pycache__", ".venv"}
+TAMANHO_MAXIMO = 2 * 1024 * 1024  # bytes; ficheiros de texto maiores são recusados, não lidos
 
 # 9 dígitos em grupos de 3 (com separador) ou com prefixo internacional.
 _TELEFONE = re.compile(
@@ -26,7 +28,9 @@ _TELEFONE_EXTRA = (
     re.compile(r"(?<![\w+])(?:\+55[\s.-]?)?\(?\d{2}\)?[\s.-]?9\d{4}[\s.-]?\d{4}(?!\w)"),
     re.compile(r"(?<![\w+])(?:00|\+)\d{2,3}\d{9}(?!\w)"),
 )
-_EMAIL = re.compile(r"[\w.+-]+@([\w-]+(?:\.[\w-]+)+)")
+# O lookbehind obriga a começar no início do "token": sem ele o motor tentava todas as posições de
+# uma sequência longa e o tempo crescia com o quadrado do tamanho da linha.
+_EMAIL = re.compile(r"(?<![\w.+-])[\w.+-]+@([\w-]+(?:\.[\w-]+)+)")
 _DOCUMENTO = re.compile(r"(?<![\w.+-])\d{8,9}(?![\w.-])")
 
 
@@ -42,10 +46,16 @@ def _achados_da_linha(linha: str, local: str) -> list[Achado]:
     for m in _EMAIL.finditer(linha):
         if m.group(1).lower() != DOMINIO_FICTICIO:
             achados.append(Achado("EMAIL", "endereço de e-mail real", local))
-    telefones = [m.span() for m in _TELEFONE.finditer(linha)]
+    tem_telefone = any(a.codigo == "TELEFONE" for a in achados)
+    if tem_telefone:
+        return achados
+    inicios, fins = [], []
+    for m in _TELEFONE.finditer(linha):
+        inicios.append(m.start())
+        fins.append(m.end())
     for m in _DOCUMENTO.finditer(linha):
-        dentro_de_telefone = any(s <= m.start() and m.end() <= e for s, e in telefones)
-        if not dentro_de_telefone and not any(a.codigo == "TELEFONE" for a in achados):
+        i = bisect_right(inicios, m.start()) - 1  # último telefone que começa até aqui
+        if not (i >= 0 and m.end() <= fins[i]):
             achados.append(Achado("DOCUMENTO", "número com formato de documento", local))
     return achados
 
@@ -59,19 +69,30 @@ def verificar_texto(texto: str, caminho: str) -> Resultado:
     return Resultado(Estado.REPROVOU if achados else Estado.PASSOU, tuple(achados))
 
 
+class _FicheiroGrande(Exception):
+    """O ficheiro de texto excede TAMANHO_MAXIMO."""
+
+
 def _ler_texto(caminho: Path) -> str | None:
-    """Devolve o texto, ou None para binários e ficheiros ilegíveis."""
+    """Devolve o texto, ou None para binários e ficheiros ilegíveis. Lê no máximo TAMANHO_MAXIMO + 1 bytes."""
     try:
-        dados = caminho.read_bytes()
+        with caminho.open("rb") as f:
+            dados = f.read(TAMANHO_MAXIMO + 1)
     except OSError:
         return None
     if b"\x00" in dados[:1024]:
         return None
+    if len(dados) > TAMANHO_MAXIMO:
+        raise _FicheiroGrande
     return dados.decode("utf-8", errors="replace")
 
 
 def _verificar_ficheiro(caminho: Path, rotulo: str) -> Resultado:
-    texto = _ler_texto(caminho)
+    try:
+        texto = _ler_texto(caminho)
+    except _FicheiroGrande:
+        return Resultado(Estado.REPROVOU, (Achado(
+            "FICHEIRO_GRANDE", f"ficheiro de texto acima de {TAMANHO_MAXIMO} bytes não foi verificado", rotulo),))
     if texto is None:
         return Resultado(Estado.PASSOU)
     return verificar_texto(texto, rotulo)

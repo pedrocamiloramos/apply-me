@@ -1,10 +1,40 @@
 # Dados pessoais nunca entram neste repositório público
 carreira-dados/
+/candidaturas/
+/log.csv
+/funil.md
+/cv-mestre.md
+/conquistas.md
 *.pdf
 *.docx
+*.doc
+*.odt
+
+# Segredos e credenciais
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+credentials*.json
+token*.json
+*.secret
+.netrc
 
 # Artefactos locais
 __pycache__/
+*.py[cod]
 .pytest_cache/
 .venv/
+venv/
 .superpowers/
+*.egg-info/
+build/
+dist/
+.coverage
+htmlcov/
+.DS_Store
