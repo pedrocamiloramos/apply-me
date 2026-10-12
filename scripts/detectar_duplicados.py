@@ -38,7 +38,8 @@ def _corpo(caminho: Path) -> str:
         return texto
 
 
-def encontrar_duplicados(pasta_candidaturas: Path, limiar: float = 0.8) -> Resultado:
+def encontrar_duplicados(pasta_candidaturas: Path, limiar: float = 0.8, candidatura: str | None = None) -> Resultado:
+    """Com `candidatura`, só reporta pares que a incluem (cartas antigas parecidas não bloqueiam as novas)."""
     if not pasta_candidaturas.is_dir():
         return Resultado(Estado.PASSOU, ())
     cartas = {
@@ -48,17 +49,17 @@ def encontrar_duplicados(pasta_candidaturas: Path, limiar: float = 0.8) -> Resul
     achados = [
         Achado("CARTAS_QUASE_IGUAIS", f"similaridade {s:.0%}: reescreva uma das duas", f"{a} / {b}")
         for (a, ta), (b, tb) in combinations(cartas.items(), 2)
-        if (s := similaridade(ta, tb)) >= limiar
+        if (candidatura is None or candidatura in (a, b)) and (s := similaridade(ta, tb)) >= limiar
     ]
     return Resultado(Estado.REPROVOU if achados else Estado.PASSOU, tuple(achados))
 
 
 def main(argv: list[str]) -> int:
-    if len(argv) != 1:
-        print("uso: python -m scripts.detectar_duplicados <pasta-dados>", file=sys.stderr)
+    if len(argv) not in (1, 2):
+        print("uso: python -m scripts.detectar_duplicados <pasta-dados> [<empresa-vaga>]", file=sys.stderr)
         return 1
     try:
-        resultado = encontrar_duplicados(Path(argv[0]) / "candidaturas")
+        resultado = encontrar_duplicados(Path(argv[0]) / "candidaturas", candidatura=argv[1] if len(argv) == 2 else None)
     except (OSError, UnicodeDecodeError) as erro:
         print(f"entrada inválida: {erro}", file=sys.stderr)
         return 1

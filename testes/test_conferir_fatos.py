@@ -12,7 +12,8 @@ HOJE = date(2026, 10, 12)  # a: 51 meses (energia), b: 14 meses (vendas) -> 5 an
 
 
 def _fato(id_: str, status: Status = Status.CONFIRMADO) -> Fato:
-    return Fato(id_, "a", status, "CV exemplo", ("dados",), {"pt": "texto", "en": "text"})
+    texto = "cerca de 10 dashboards" if id_ == "est" else "texto"
+    return Fato(id_, "a", status, "CV exemplo", ("dados",), {"pt": texto, "en": texto})
 
 
 MESTRE = Mestre(

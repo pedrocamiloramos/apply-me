@@ -36,3 +36,12 @@ aproximacoes:
   - over
   - about
   - approximately
+
+# Sinónimos de setor para amarrar "N anos" ao setor mencionado na frase.
+setores_sinonimos:
+  energia: [energy, energético, energética]
+  vendas: [sales]
+  comercial: [commercial, comércio]
+  tecnologia: [technology, tecnológico]
+  educação: [education, ensino]
+  qualidade: [quality]

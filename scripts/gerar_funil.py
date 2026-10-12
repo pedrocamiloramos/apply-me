@@ -18,15 +18,24 @@ NAO_ENVIADAS = {"", "rascunho"}
 AMOSTRA_MINIMA = 5
 
 
+def _status(l: dict[str, str]) -> str:
+    return l["status"].strip().lower()
+
+
+def _teve_resposta(l: dict[str, str]) -> bool:
+    """Resposta = status de resposta/entrevista/oferta, ou a coluna `resposta` preenchida (sobrevive a mudanças de status)."""
+    return _status(l) in RESPOSTAS or bool(l["resposta"].strip())
+
+
 def _tabela(titulo: str, linhas: list[dict[str, str]], campo: str) -> list[str]:
     enviadas: Counter[str] = Counter()
     respostas: Counter[str] = Counter()
     for l in linhas:
-        if l["status"] in NAO_ENVIADAS:
+        if _status(l) in NAO_ENVIADAS:
             continue
         grupo = l[campo] or f"(sem {titulo.lower()})"
         enviadas[grupo] += 1
-        respostas[grupo] += l["status"] in RESPOSTAS
+        respostas[grupo] += _teve_resposta(l)
     saida = [f"## Por {titulo.lower()}", "", f"| {titulo} | Enviadas | Respostas | Taxa | Nota |", "|---|---|---|---|---|"]
     for grupo in sorted(enviadas):
         taxa = f"{round(100 * respostas[grupo] / enviadas[grupo])}%"
@@ -39,8 +48,8 @@ def _tabela(titulo: str, linhas: list[dict[str, str]], campo: str) -> list[str]:
 
 def gerar_funil(log: Path, hoje: date) -> str:
     linhas = _ler(log)
-    enviadas = [l for l in linhas if l["status"] not in NAO_ENVIADAS]
-    com_resposta = sum(l["status"] in RESPOSTAS for l in enviadas)
+    enviadas = [l for l in linhas if _status(l) not in NAO_ENVIADAS]
+    com_resposta = sum(_teve_resposta(l) for l in enviadas)
     partes = [
         CABECALHO,
         f"# Funil de candidaturas ({hoje.isoformat()})",
@@ -62,7 +71,7 @@ def main(argv: list[str]) -> int:
     try:
         texto = gerar_funil(Path(argv[0]), date.today())
         Path(argv[1]).write_text(texto, encoding="utf-8")
-    except (OSError, UnicodeDecodeError) as erro:
+    except (OSError, UnicodeDecodeError, ValueError) as erro:
         print(f"entrada inválida: {erro}", file=sys.stderr)
         return 1
     return 0

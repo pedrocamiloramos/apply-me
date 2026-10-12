@@ -114,6 +114,16 @@ def _fato(d: dict[str, Any]) -> Fato:
     )
 
 
+def _conflito(c: dict[str, Any]) -> Conflito:
+    resolvido = c.get("resolvido", False)
+    if not isinstance(resolvido, bool):
+        raise ValueError(f"conflito {c['campo']}: 'resolvido' deve ser true ou false, não {resolvido!r}")
+    valores = c["valores"]
+    if isinstance(valores, str) or not isinstance(valores, (list, tuple)):
+        raise ValueError(f"conflito {c['campo']}: 'valores' deve ser uma lista")
+    return Conflito(c["campo"], tuple(str(v) for v in valores), resolvido)
+
+
 def carregar_mestre(pasta: Path) -> Mestre:
     cv = _front_matter(pasta / "cv-mestre.md")
     conquistas = _front_matter(pasta / "conquistas.md")
@@ -124,10 +134,7 @@ def carregar_mestre(pasta: Path) -> Mestre:
         ferramentas={k: str(v) for k, v in (cv.get("ferramentas") or {}).items()},
         experiencias=tuple(_experiencia(e) for e in cv.get("experiencias") or ()),
         fatos=tuple(_fato(f) for f in conquistas.get("fatos") or ()),
-        conflitos=tuple(
-            Conflito(c["campo"], tuple(str(v) for v in c["valores"]), bool(c.get("resolvido", False)))
-            for c in cv.get("conflitos") or ()
-        ),
+        conflitos=tuple(_conflito(c) for c in cv.get("conflitos") or ()),
     )
 
 
@@ -183,7 +190,7 @@ def main(argv: list[str]) -> int:
     pasta = Path(argv[0]) if argv else Path(".")
     try:
         resultado = validar_mestre(carregar_mestre(pasta))
-    except (OSError, ValueError, KeyError) as erro:
+    except (OSError, ValueError, KeyError, TypeError, AttributeError) as erro:
         print(f"entrada inválida: {erro}", file=sys.stderr)
         return 1
     for a in resultado.achados:

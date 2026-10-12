@@ -16,14 +16,16 @@ Este repositório é um fluxo de candidaturas em etapas. Funciona com Claude, Ch
 
 | # | Etapa | Skill | Artefato | Verificação |
 |---|-------|-------|----------|-------------|
-| 1 | Ler a vaga | `skills/ler-vaga` | `vaga.yaml` | `python -m scripts.validar_contrato vaga candidaturas/<x>/vaga.yaml` |
-| 2 | Comparar com o mestre | `skills/comparar` | `gaps.yaml` | `python -m scripts.mestre <dados>` e `validar_contrato gaps …` |
+| 1 | Ler a vaga | `skills/ler-vaga` | `vaga.yaml` | `python -m scripts.validar_contrato vaga <dados>/candidaturas/<x>/vaga.yaml` |
+| 2 | Comparar com o mestre | `skills/comparar` | `gaps.yaml` | `python -m scripts.mestre <dados>` e `validar_contrato gaps <dados>/candidaturas/<x>/…` |
 | 3 | Planejar | `skills/planejar` | `plano.yaml` | `python -m scripts.validar_contrato plano …` |
 | 4 | Aprovação humana do plano | (pessoa) | — | — |
 | 5 | Redigir | `skills/redigir` | `rascunho.md` | `python -m scripts.validar_contrato rascunho …` |
-| 6 | QA | `skills/qa` | `qa.yaml` | `python -m scripts.conferir_fatos <dados> candidaturas/<x>` e `python -m scripts.detectar_duplicados <dados>` |
-| 7 | Envio (pessoa) e registo | `skills/registrar` | `log.csv` | `python -m scripts.registrar log.csv url=… status=…` |
-| 8 | Funil | `skills/funil` | `funil.md` | `python -m scripts.gerar_funil log.csv funil.md` |
+| 6 | QA | `skills/qa` | `qa.yaml` | `python -m scripts.conferir_fatos <dados> <dados>/candidaturas/<x>` e `python -m scripts.detectar_duplicados <dados> <x>` |
+| 7 | Envio (pessoa) e registo | `skills/registrar` | `log.csv` | `python -m scripts.registrar <dados>/log.csv url=… status=…` |
+| 8 | Funil | `skills/funil` | `funil.md` | `python -m scripts.gerar_funil <dados>/log.csv <dados>/funil.md` |
+
+`<dados>` é a pasta do repositório privado (`carreira-dados`). Rode os comandos a partir da raiz de `carreira-motor` e **sempre** com caminhos dentro de `<dados>`: nunca crie `log.csv` ou candidaturas dentro deste repositório público.
 
 Códigos de saída de todos os scripts: `0` passou, `1` reprovou (corrija e repita), `2` bloqueado (pare e pergunte à pessoa).
 
@@ -40,3 +42,7 @@ funil.md            gerado, não editar
 ## Privacidade
 
 Nunca coloque telefone, e-mail, documentos ou texto real de cartas neste repositório. O hook de pré-commit recusa dados reais. Exemplos usam `+351 900 000 000` e `@exemplo.invalid`.
+
+## Limites conhecidos da verificação
+
+`conferir_fatos` é uma rede de segurança, não um juiz. Ele confere ids, estado dos factos, números (cada número da frase tem de constar do facto citado), anos de experiência (amarrados ao setor mencionado), as ferramentas do vocabulário (`scripts/vocabulario.yaml`), cargo/início/empregador declarados em `afirmacoes`, contactos e idioma por palavras-chave. **Não** apanha: ferramentas fora do vocabulário, cargos ou empregadores citados no corpo sem constar de `afirmacoes`, nem frases noutro idioma sem palavras funcionais reconhecíveis. A revisão de julgamento do `qa` deve ler o texto à procura exatamente disso.

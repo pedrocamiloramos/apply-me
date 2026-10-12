@@ -121,9 +121,38 @@ def _numero(token: str) -> int:
     return int(token) if token.isdigit() else _NUMEROS[token.lower()]
 
 
-def _anos_aceites(m: Mestre, hoje: date) -> set[int]:
-    setores = {e.setor for e in m.experiencias if e.setor}
-    return {anos_experiencia(m, hoje)} | {anos_experiencia(m, hoje, setor=s) for s in setores}
+def _anos_aceites(m: Mestre, hoje: date, texto: str) -> set[int]:
+    """Anos que a frase pode afirmar: os do setor que ela menciona, ou o total se não menciona nenhum."""
+    sinonimos = _vocabulario().get("setores_sinonimos", {})
+    mencionados = {
+        e.setor for e in m.experiencias
+        if e.setor and any(
+            re.search(rf"(?<!\w){re.escape(termo)}(?!\w)", texto, re.IGNORECASE)
+            for termo in [e.setor, *sinonimos.get(e.setor, [])]
+        )
+    }
+    if mencionados:
+        return {anos_experiencia(m, hoje, setor=s) for s in mencionados}
+    return {anos_experiencia(m, hoje)}
+
+
+_NUMERO = re.compile(r"(?<![\w.,])\d+(?:[.,]\d+)?(?![\w])")
+
+
+def _numeros_sem_fonte(f: Frase, m: Mestre, fatos: dict[str, Any]) -> list[str]:
+    """Números da frase que não aparecem nos factos citados (nem nas datas do mestre, nem numa afirmação de anos)."""
+    permitidos: set[str] = {str(e.inicio.year) for e in m.experiencias}
+    permitidos |= {str(e.fim.year) for e in m.experiencias if e.fim}
+    for id_ in f.ids:
+        fato = fatos.get(id_)
+        if fato is not None:
+            for texto in (v for v in fato.texto.values() if isinstance(v, str)):
+                permitidos |= set(_NUMERO.findall(texto))
+    em_anos = [mt.span() for mt in _ANOS.finditer(f.texto)]
+    return [
+        n.group() for n in _NUMERO.finditer(f.texto)
+        if n.group() not in permitidos and not any(s <= n.start() < e for s, e in em_anos)
+    ]
 
 
 def _conferir_frase(f: Frase, r: Rascunho, m: Mestre, plano: dict[str, Any], hoje: date, achados: list[Achado]) -> None:
@@ -144,13 +173,16 @@ def _conferir_frase(f: Frase, r: Rascunho, m: Mestre, plano: dict[str, Any], hoj
                 achados.append(Achado("FATO_DESCONHECIDO", f"facto desconhecido não pode entrar no texto: {id_}", local))
             elif fato.status is Status.ESTIMADO and not tem_aproximacao:
                 achados.append(Achado("ESTIMADO_SEM_APROXIMACAO", f"facto estimado exige redação aproximada: {id_}", local))
+    if not f.formulaica and f.ids:
+        for numero in _numeros_sem_fonte(f, m, fatos):
+            achados.append(Achado("NUMERO_SEM_FONTE", f"número '{numero}' não consta dos factos citados", local))
     conhecidas = {k.lower() for k in m.ferramentas}
     for ferramenta in _vocabulario()["ferramentas"]:
         if ferramenta.lower() in conhecidas:
             continue
         if re.search(rf"(?<!\w){re.escape(ferramenta)}(?!\w)", f.texto, re.IGNORECASE):
             achados.append(Achado("FERRAMENTA_SEM_FONTE", f"ferramenta sem fonte no mestre: {ferramenta}", local))
-    aceites = _anos_aceites(m, hoje)
+    aceites = _anos_aceites(m, hoje, f.texto)
     for qualificador, token in _ANOS.findall(f.texto):
         n, q = _numero(token), qualificador.lower()
         if q in _QUALIFICADOR_MINIMO:
@@ -222,10 +254,10 @@ def main(argv: list[str]) -> int:
         mestre = carregar_mestre(dados)
         plano = yaml.safe_load((candidatura / "plano.yaml").read_text(encoding="utf-8-sig")) or {}
         rascunho = parsear_rascunho((candidatura / "rascunho.md").read_text(encoding="utf-8-sig"))
-    except (OSError, ValueError, KeyError, yaml.YAMLError) as erro:
+        resultado = conferir_rascunho(rascunho, mestre, plano, date.today())
+    except (OSError, ValueError, KeyError, TypeError, AttributeError, yaml.YAMLError) as erro:
         print(f"entrada inválida: {erro}", file=sys.stderr)
         return 1
-    resultado = conferir_rascunho(rascunho, mestre, plano, date.today())
     for a in resultado.achados:
         print(f"{a.local}: {a.codigo}: {a.mensagem}", file=sys.stderr)
     return codigo_saida(resultado)

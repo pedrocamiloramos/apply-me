@@ -21,6 +21,11 @@ PASTAS_IGNORADAS = {".git", ".superpowers", ".pytest_cache", "__pycache__", ".ve
 _TELEFONE = re.compile(
     r"(?<![\w+])(?:\+\d{1,3}[\s.-]?)?(\d{3})[\s.-]?(\d{3})[\s.-]?(\d{3})(?![\w])"
 )
+# Brasil e internacional compacto (exemplos nos testes).  # privacidade:ignorar
+_TELEFONE_EXTRA = (
+    re.compile(r"(?<![\w+])(?:\+55[\s.-]?)?\(?\d{2}\)?[\s.-]?9\d{4}[\s.-]?\d{4}(?!\w)"),
+    re.compile(r"(?<![\w+])(?:00|\+)\d{2,3}\d{9}(?!\w)"),
+)
 _EMAIL = re.compile(r"[\w.+-]+@([\w-]+(?:\.[\w-]+)+)")
 _DOCUMENTO = re.compile(r"(?<![\w.+-])\d{8,9}(?![\w.-])")
 
@@ -30,6 +35,10 @@ def _achados_da_linha(linha: str, local: str) -> list[Achado]:
     for m in _TELEFONE.finditer(linha):
         if "".join(m.groups()) != TELEFONE_FICTICIO:
             achados.append(Achado("TELEFONE", "número de telefone real", local))
+    for padrao in _TELEFONE_EXTRA:
+        for m in padrao.finditer(linha):
+            if not re.sub(r"\D", "", m.group()).endswith(TELEFONE_FICTICIO):
+                achados.append(Achado("TELEFONE", "número de telefone real", local))
     for m in _EMAIL.finditer(linha):
         if m.group(1).lower() != DOMINIO_FICTICIO:
             achados.append(Achado("EMAIL", "endereço de e-mail real", local))

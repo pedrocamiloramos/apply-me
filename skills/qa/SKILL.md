@@ -26,9 +26,10 @@ Depois de cada versão de `rascunho.md`.
 ## Regras
 Ordem obrigatória:
 
-1. `python -m scripts.conferir_fatos <dados> candidaturas/<empresa-vaga>`. Código 1: liste cada achado em `correcoes` com o `local` indicado. Código 2: pare e pergunte à pessoa.
-2. `python -m scripts.detectar_duplicados <dados>`. Se a carta for quase igual a outra, peça reescrita do ângulo.
-3. Só com 1 e 2 limpos, a revisão de julgamento: tom, aderência ao ângulo do plano, clareza, tamanho.
+0. `python -m scripts.validar_contrato rascunho <dados>/candidaturas/<empresa-vaga>/rascunho.md`. Só avance com código 0.
+1. `python -m scripts.conferir_fatos <dados> <dados>/candidaturas/<empresa-vaga>`. Código 1: liste cada achado em `correcoes` com o `local` indicado. Código 2: pare e pergunte à pessoa.
+2. `python -m scripts.detectar_duplicados <dados> <empresa-vaga>` (só pares que incluem esta candidatura). Se a carta for quase igual a outra, peça reescrita do ângulo.
+3. Só com 1 e 2 limpos, a revisão de julgamento: tom, aderência ao ângulo do plano, clareza, tamanho, e o que o script não vê: ferramentas ou empregadores fora do mestre citados no corpo, frases noutro idioma (ver "Limites conhecidos" em `AGENTS.md`).
 
 Cada devolução ao `redigir` soma uma volta. Com `voltas` = 2 e ainda com correções, o estado é bloqueado: pare e entregue à pessoa.
 
