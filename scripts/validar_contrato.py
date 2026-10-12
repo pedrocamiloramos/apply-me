@@ -16,6 +16,7 @@ from jsonschema import Draft202012Validator
 
 from scripts.frontmatter import separar
 from scripts.resultado import Achado, Estado, Resultado, codigo_saida
+from scripts.yaml_seguro import carregar
 
 TIPOS = ("vaga", "gaps", "plano", "rascunho", "qa")
 LIMITE_DE_VOLTAS = 2
@@ -68,7 +69,7 @@ def validar_ficheiro(tipo: str, caminho: Path) -> Resultado:
         if tipo == "rascunho" and caminho.suffix == ".md":
             dados, _ = separar(texto)
         else:
-            dados = yaml.safe_load(texto)
+            dados = carregar(texto)
     except (OSError, UnicodeDecodeError, ValueError, yaml.YAMLError) as erro:
         return Resultado(Estado.REPROVOU, (Achado("ENTRADA_INVALIDA", str(erro), str(caminho)),))
     return validar_contrato(tipo, dados)

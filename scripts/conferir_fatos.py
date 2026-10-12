@@ -22,6 +22,7 @@ import yaml
 from scripts.frontmatter import separar
 from scripts.mestre import Mestre, Status, anos_experiencia, carregar_mestre
 from scripts.resultado import Achado, Estado, Resultado, codigo_saida
+from scripts.yaml_seguro import carregar
 
 BLOQUEANTES = {"FATO_DESCONHECIDO", "CONFLITO_ABERTO"}
 _FORMULAICA = ">> "
@@ -252,7 +253,7 @@ def main(argv: list[str]) -> int:
     dados, candidatura = Path(argv[0]), Path(argv[1])
     try:
         mestre = carregar_mestre(dados)
-        plano = yaml.safe_load((candidatura / "plano.yaml").read_text(encoding="utf-8-sig")) or {}
+        plano = carregar((candidatura / "plano.yaml").read_text(encoding="utf-8-sig")) or {}
         rascunho = parsear_rascunho((candidatura / "rascunho.md").read_text(encoding="utf-8-sig"))
         resultado = conferir_rascunho(rascunho, mestre, plano, date.today())
     except (OSError, ValueError, KeyError, TypeError, AttributeError, yaml.YAMLError) as erro:

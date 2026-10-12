@@ -7,6 +7,8 @@ from typing import Any
 
 import yaml
 
+from scripts.yaml_seguro import carregar
+
 _BLOCO = re.compile(r"\A---\n(.*?)\n---[ \t]*(?:\n|\Z)", re.DOTALL)
 
 
@@ -17,7 +19,7 @@ def separar(texto: str) -> tuple[dict[str, Any], str]:
     if not m:
         raise ValueError("front matter (bloco entre '---') não encontrado")
     try:
-        dados = yaml.safe_load(m.group(1))
+        dados = carregar(m.group(1))
     except yaml.YAMLError as erro:
         raise ValueError(f"YAML inválido: {erro}") from erro
     if dados is None:
