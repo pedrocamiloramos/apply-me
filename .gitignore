@@ -1,0 +1,10 @@
+# Dados pessoais nunca entram neste repositório público
+carreira-dados/
+*.pdf
+*.docx
+
+# Artefactos locais
+__pycache__/
+.pytest_cache/
+.venv/
+.superpowers/

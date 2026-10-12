@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Recusa o commit se algum ficheiro em stage contiver dados pessoais reais.
+set -euo pipefail
+raiz="$(git rev-parse --show-toplevel)"
+cd "$raiz"
+mapfile -t ficheiros < <(git diff --cached --name-only --diff-filter=ACM)
+[ "${#ficheiros[@]}" -eq 0 ] && exit 0
+exec "${PYTHON:-python3}" -m scripts.verificar_privacidade "${ficheiros[@]}"
