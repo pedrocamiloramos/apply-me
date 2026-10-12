@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Recusa mensagens de commit fora do padrão Conventional Commits.
+set -euo pipefail
+raiz="$(git rev-parse --show-toplevel)"
+cd "$raiz"
+exec "${PYTHON:-python3}" -m scripts.verificar_commit "$1"
