@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 from scripts.mestre import Status, carregar_mestre, validar_mestre
@@ -28,8 +29,17 @@ def test_repo_sem_dados_pessoais():
 
 def test_readme_cobre_o_essencial():
     texto = (RAIZ / "README.md").read_text(encoding="utf-8")
-    for trecho in ("```mermaid", "template-dados", "carreira-dados", "revisão de tom", "exemplos/ana-exemplo"):
+    for secao in ("## Arquitetura", "## Instalação", "## Configuração", "## Uso", "## Limitações", "## Privacidade e segurança"):
+        assert secao in texto, secao
+    for trecho in ("```mermaid", "template-dados", "carreira-dados", "exemplos/ana-exemplo", "Não envia nada", "Não inventa"):
         assert trecho in texto, trecho
+
+
+def test_ligacoes_locais_do_readme_existem():
+    texto = (RAIZ / "README.md").read_text(encoding="utf-8")
+    destinos = re.findall(r"\]\(([^)#]+?)(?:#[^)]*)?\)", texto)
+    locais = [d for d in destinos if not d.startswith(("http://", "https://", "mailto:"))]
+    assert locais and all((RAIZ / d).exists() for d in locais), [d for d in locais if not (RAIZ / d).exists()]
 
 
 def test_spec_nao_foi_copiada_para_o_repositorio():

@@ -1,12 +1,17 @@
 [project]
-name = "carreira-motor"
+name = "apply-me"
 version = "0.1.0"
-description = "Motor de agentes e verificações determinísticas para candidaturas"
+description = "Apoio à preparação e gestão de candidaturas, com verificações determinísticas dos factos"
+readme = "README.md"
+license = { file = "LICENSE" }
 requires-python = ">=3.11"
-dependencies = ["pyyaml", "jsonschema"]
+dependencies = [
+    "pyyaml>=6.0.1,<7",
+    "jsonschema>=4.20,<5",
+]
 
 [project.optional-dependencies]
-dev = ["pytest"]
+dev = ["pytest>=8,<10"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

@@ -69,3 +69,9 @@ def test_redigir_e_qa_e_planejar_trazem_as_instrucoes_do_brief():
     qa = _skill("qa")[1]
     assert qa.index("conferir_fatos") < qa.index("detectar_duplicados") < qa.lower().index("julgamento")
     assert "bloqueios" in _skill("planejar")[1]
+
+
+def test_vagas_sao_tratadas_como_dado_nao_confiavel():
+    assert "dado não confiável" in (RAIZ / "AGENTS.md").read_text(encoding="utf-8")
+    corpo = _skill("ler-vaga")[1]
+    assert "não confiável" in corpo and "instruções" in corpo
