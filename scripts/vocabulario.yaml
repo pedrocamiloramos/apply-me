@@ -1,0 +1,38 @@
+# Vocabulário usado por conferir_fatos.
+# Uma ferramenta citada num rascunho tem de existir em `ferramentas` do CV-mestre.
+ferramentas:
+  - Python
+  - Power BI
+  - Power Automate
+  - Power Apps
+  - Excel
+  - VBA
+  - DAX
+  - SQL
+  - Tableau
+  - MATLAB
+  - ArcGIS
+  - QGIS
+  - SAP
+  - Salesforce
+  - CRM
+  - Lean
+  - BPM
+  - Six Sigma
+  - Kanban
+  - Scrum
+  - Agile
+  - cloud
+  - Azure
+  - AWS
+  - Git
+  - Docker
+
+# Expressões que tornam aceitável um número estimado.
+aproximacoes:
+  - mais de
+  - cerca de
+  - aproximadamente
+  - over
+  - about
+  - approximately
