@@ -1,0 +1,14 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: vaga
+description: Saída da etapa "ler vaga".
+type: object
+additionalProperties: false
+required: [url, titulo, empresa, idioma, senioridade, requisitos, palavras_chave]
+properties:
+  url: {type: string, minLength: 1}
+  titulo: {type: string, minLength: 1}
+  empresa: {type: string, minLength: 1}
+  idioma: {enum: [pt-PT, pt-BR, en]}
+  senioridade: {type: string, minLength: 1}
+  requisitos: {type: array, items: {type: string}}
+  palavras_chave: {type: array, items: {type: string}}

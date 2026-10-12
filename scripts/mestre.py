@@ -15,8 +15,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
-import yaml
-
+from scripts.frontmatter import separar
 from scripts.resultado import Achado, Estado, Resultado, codigo_saida
 
 
@@ -64,19 +63,15 @@ class Mestre:
     conflitos: tuple[Conflito, ...]
 
 
-_BLOCO = re.compile(r"\A---\n(.*?)\n---[ \t]*(?:\n|\Z)", re.DOTALL)
 _MES = re.compile(r"\A(\d{4})-(\d{2})\Z")
 
 
 def _front_matter(caminho: Path) -> dict[str, Any]:
-    texto = caminho.read_text(encoding="utf-8-sig").replace("\r\n", "\n")
-    m = _BLOCO.match(texto)
-    if not m:
-        raise ValueError(f"{caminho.name}: bloco YAML entre '---' não encontrado")
-    dados = yaml.safe_load(m.group(1)) or {}
-    if not isinstance(dados, dict):
-        raise ValueError(f"{caminho.name}: o bloco YAML deve ser um mapa")
-    return dados
+    try:
+        meta, _ = separar(caminho.read_text(encoding="utf-8-sig"))
+    except ValueError as erro:
+        raise ValueError(f"{caminho.name}: {erro}") from erro
+    return meta
 
 
 def _data(valor: Any, onde: str) -> date | None:

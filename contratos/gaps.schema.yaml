@@ -1,0 +1,14 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: gaps
+description: Saída da etapa "comparar" (vaga x CV-mestre).
+type: object
+additionalProperties: false
+required: [vaga_url, fatos_relevantes, lacunas, bloqueios]
+properties:
+  vaga_url: {type: string, minLength: 1}
+  fatos_relevantes: {type: array, items: {type: string}}
+  lacunas: {type: array, items: {type: string}}
+  bloqueios:
+    description: ids de factos desconhecidos ou conflitos abertos que impedem candidatar.
+    type: array
+    items: {type: string}

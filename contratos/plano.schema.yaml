@@ -1,0 +1,14 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: plano
+description: Saída da etapa "planejar".
+type: object
+additionalProperties: false
+required: [vaga_url, decisao, angulo, fatos, titulo_variante, idioma, versao_mestre]
+properties:
+  vaga_url: {type: string, minLength: 1}
+  decisao: {enum: [candidatar, descartar]}
+  angulo: {type: string, minLength: 1}
+  fatos: {type: array, items: {type: string}}
+  titulo_variante: {type: string, minLength: 1}
+  idioma: {enum: [pt-PT, pt-BR, en]}
+  versao_mestre: {type: string, minLength: 1}

@@ -1,0 +1,21 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: rascunho
+description: Front matter do ficheiro rascunho.md; as frases do corpo são verificadas por conferir_fatos.
+type: object
+additionalProperties: false
+required: [vaga_url, idioma, versao_mestre]
+properties:
+  vaga_url: {type: string, minLength: 1}
+  idioma: {enum: [pt-PT, pt-BR, en]}
+  versao_mestre: {type: string, minLength: 1}
+  afirmacoes:
+    description: afirmações estruturadas que o texto faz e que são conferidas contra o mestre.
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      required: [tipo, experiencia, valor]
+      properties:
+        tipo: {enum: [cargo, inicio, empregador]}
+        experiencia: {type: string, minLength: 1}
+        valor: {type: string, minLength: 1}

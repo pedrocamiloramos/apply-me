@@ -1,0 +1,19 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: qa
+description: Saída da etapa "qa". Após 2 voltas com correções o fluxo pára (regra em validar_contrato).
+type: object
+additionalProperties: false
+required: [vaga_url, estado, correcoes, voltas]
+properties:
+  vaga_url: {type: string, minLength: 1}
+  estado: {enum: [aprovado, correcoes]}
+  correcoes:
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      required: [local, mensagem]
+      properties:
+        local: {type: string, minLength: 1}
+        mensagem: {type: string, minLength: 1}
+  voltas: {type: integer, minimum: 0, maximum: 2}
